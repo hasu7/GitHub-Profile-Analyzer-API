@@ -11,7 +11,6 @@ import {
 
 import { analyzeRepos } from "../services/analysis.service.js";
 
-// 1. Analyze + Save Profile
 export const analyzeProfile = async (req, res) => {
 
     try {
@@ -25,34 +24,35 @@ export const analyzeProfile = async (req, res) => {
             });
         }
 
-        // check duplicate
         const exists = await profileExists(username);
 
-        if (exists) {
-            return res.status(409).json({
-                success: false,
-                message: "Profile already analyzed"
-            });
-        }
-
-        // fetch from GitHub
         const profile = await getGithubProfile(username);
         const repoAnalysis = await analyzeRepos(username);
 
-        // save to DB
-        await saveProfile({
-    ...profile,
-    ...repoAnalysis
-});
+        const score =
+            (profile.followers * 3) +
+            (repoAnalysis.totalStars * 2) +
+            (profile.public_repos * 1) +
+            (repoAnalysis.totalForks * 1);
+
+        profile.totalRepos = repoAnalysis.totalRepos;
+        profile.totalStars = repoAnalysis.totalStars;
+        profile.totalForks = repoAnalysis.totalForks;
+        profile.mostUsedLanguage = repoAnalysis.mostUsedLanguage;
+        profile.mostStarredRepo = repoAnalysis.mostStarredRepo;
+        profile.score = score;
+
+        await saveProfile(profile);
 
         return res.status(201).json({
             success: true,
-            message: "Profile analyzed successfully",
+            message: exists
+                ? "Profile updated successfully"
+                : "Profile analyzed successfully",
             profile
         });
 
     } catch (error) {
-
         return res.status(500).json({
             success: false,
             message: error.message
@@ -60,22 +60,19 @@ export const analyzeProfile = async (req, res) => {
     }
 };
 
-
-// 2. Get all profiles
 export const fetchProfiles = async (req, res) => {
 
     try {
 
         const profiles = await getAllProfiles();
 
-        return res.status(200).json({
+        return res.json({
             success: true,
             count: profiles.length,
             profiles
         });
 
     } catch (error) {
-
         return res.status(500).json({
             success: false,
             message: error.message
@@ -83,8 +80,6 @@ export const fetchProfiles = async (req, res) => {
     }
 };
 
-
-// 3. Get single profile by username
 export const fetchSingleProfile = async (req, res) => {
 
     try {
@@ -100,13 +95,12 @@ export const fetchSingleProfile = async (req, res) => {
             });
         }
 
-        return res.status(200).json({
+        return res.json({
             success: true,
             profile
         });
 
     } catch (error) {
-
         return res.status(500).json({
             success: false,
             message: error.message
