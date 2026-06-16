@@ -4,7 +4,7 @@ import pool from "./config/db.js";
 
 dotenv.config();
 
-const PORT = process.env.PORT || 3306;
+const PORT = process.env.PORT || 3000;
 
 async function startServer() {
   try {
@@ -20,7 +20,7 @@ async function startServer() {
 
   } catch (error) {
     console.error("❌ Database connection failed");
-    console.error(error.message);
+    console.error(error); // <-- not error.message
   }
 }
 

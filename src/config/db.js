@@ -8,17 +8,7 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
+  enableKeepAlive: true,
 });
-
-(async () => {
-  try {
-    const conn = await pool.getConnection();
-    console.log("✅ MySQL Connected!");
-    conn.release();
-  } catch (err) {
-    console.error("❌ Database connection failed");
-    console.error(err);
-  }
-})();
 
 export default pool;
